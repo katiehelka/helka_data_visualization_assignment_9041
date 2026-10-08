@@ -1,5 +1,11 @@
 project:
-  title: "Visual_Data_Assignment"
+  type: website
+
+website:
+  title: "Visual Data Assignment"
+
+format:
+  html:
+    theme: cosmo
 
 editor: visual
-
