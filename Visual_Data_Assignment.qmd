@@ -1,0 +1,324 @@
+---
+title: "Visual_Data_Assignment"
+author: "Katelyn Helka"
+date: today
+---
+```{r}
+#| include: false
+library(ggplot2)
+library(tidyverse)
+
+nde_data <- read.csv("nde_experiences.csv")
+```
+
+```{r}
+#| include: false
+nde_subset <- nde_data |>
+  select(gender, country, greyson_score)|>
+  filter(!is.na(greyson_score))|>
+  mutate(NDE = case_when(greyson_score >= 7 ~ "Yes", greyson_score < 7 ~ "No")) 
+```
+
+```{r}
+#| include: false
+## Looking at different Graphs
+### Bar graphs by gender
+ggplot(data = nde_subset, aes(x = gender, fill = gender)) + 
+  geom_bar(position = "dodge") + 
+  labs(
+  title = "Self-Reported Near Death Experience by Gender",
+  x = "Gender",
+  y = "Number of Participants"
+) +
+  scale_fill_manual(
+    values = c("F" = "pink","M" = "lightblue")
+  )
+
+ggplot(nde_subset, aes(x = gender, fill = NDE)) +
+  geom_bar(position = "dodge") +
+  labs(
+    title = "Near Death Experience by Gender",
+    x = "Gender",
+    y = "Number of Participants",
+    fill = "NDE"
+  ) +
+  scale_fill_manual(
+    values = c("Yes" = "purple", "No" = "plum")
+  ) +
+  theme_minimal()
+```
+
+```{r}
+#| include: false
+### Distribution of True Near Death Experiences
+ggplot(nde_subset, aes(x = greyson_score, fill = NDE)) + 
+  geom_histogram(bins = 33, colour = "black") +  
+  labs(
+    title = "Greyson Score Distribution of Reported Near Death Experiences",
+    x = "Greyson Score",
+    y = "Number of Participants",
+    fill = "NDE"
+  ) +
+  scale_fill_manual(
+    values = c("Yes" = "purple2", "No" = "plum")
+  ) +
+  theme_minimal()
+
+nde_subset |>
+  filter(NDE == "Yes") |>
+ggplot(aes(x = greyson_score)) +
+  geom_bar(fill = "purple2", colour = "black") +
+  labs(
+    title = "Greyson Score Distribution of Near Death Experiences",
+    x = "Greyson Score",
+    y = "Number of Participants") +
+  theme_minimal()
+
+nde_subset |>
+  filter(NDE == "Yes") |>
+ggplot(aes(x = greyson_score, fill = country)) +
+  geom_bar(position = "dodge", colour = "black") +
+  labs(
+    title = "Greyson Score Distribution of Near Death Experiences",
+    x = "Greyson Score",
+    y = "Number of Participants",
+    fill = "Country") +
+  theme_minimal()
+```
+
+```{r}
+#| include: false
+### Graphs by Country
+country_counts <- nde_subset|>
+  filter(!is.na(country)) |>
+  count(country) |>
+  mutate(
+    country_group = ifelse(n < 8, "Other Countries", country)
+    )
+
+nde_country_group <- nde_subset |>
+  filter(!is.na(country)) |>
+    left_join(
+    country_counts |>
+      select(country, country_group),
+    by = "country"
+    )
+```
+
+```{r}
+#| include: false
+ggplot(nde_country_group, aes(x = country_group, fill = NDE)) +
+  geom_bar(position = "dodge") +
+  labs(
+    title = "Near Death Experience by Country",
+    x = "Home Country",
+    y = "Number of Participants",
+    fill = "NDE"
+  ) +
+  scale_fill_manual(
+    values = c("Yes" = "purple", "No" = "plum")
+  ) +
+  theme_minimal()
+
+nde_country_group |>
+  filter(NDE == "Yes") |>
+ggplot(aes(x = country_group, fill = country)) +
+  geom_bar(position = "dodge") +
+  labs(
+    title = "Near Death Experience by Country",
+    x = "Home Country",
+    y = "Number of Participants",
+    fill = "Country"
+  ) +
+  theme_minimal()
+```
+
+
+# Near Death Experiences
+
+Studies show that 10-23% of cardiac arrest survivors report their near-death experience and the Near-Death Experience Research Foundation (NDERF) publishes these self disclosures. Among self-reported near death experiences in the NDERF data set, reports are heavily concentrated in the United States. However, only some of these experiences are truly considered a near death experience (NDE). Most reported experiences do not meet the conventional threshold of a 7 or higher for a true NDE based on the Greyson scale. Among experiences meeting that threshold, the United States remains dominant, with Australia, Canada, and Spain following.
+
+## Scientific Article:
+### Distribution and Geographic Patterns of reported Near-Death Experiences
+The Near-Death Experience Research Foundation (NDERF) collects self-reported accounts of experiences that individuals identify as near-death experiences. However, not all reported experiences meet the conventional threshold for classification as a near-death experience. We examined the distribution of Greyson scores and the geographic distribution of experiences classified as true NDEs.
+
+The Greyson Near-Death Experience Scale ranges from 0 to 32, with scores of 7 or greater commonly used as the threshold for identifying an NDE. The distribution of scores in the dataset, see Figure 1, indicates that a substantial proportion of self-reported experiences fall below this threshold. 
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+ggplot(nde_subset, aes(x = greyson_score, fill = NDE)) + 
+  geom_histogram(bins = 33, colour = "black") +  
+  labs(
+    title = "Figure 1: Distribution of Greyson Scores Among Reported Experiences",
+    x = "Greyson Score",
+    y = "Number of Participants",
+    fill = "NDE"
+  ) +
+  scale_fill_manual(
+    values = c("Yes" = "grey30", "No" = "grey70")
+  ) +
+  theme_classic()
+```
+
+Thus, self-identification as an NDE does not necessarily correspond with classification of a true NDE based on the Greyson scale. 
+
+Among experiences meeting the threshold for a true NDE, reports are strongly concentrated in the United States. Australia, Canada and Spain account for the next largest groups of true NDEs as can be seen in Figure 2. 
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+nde_country_group |>
+  filter(NDE == "Yes") |>
+  mutate(
+    country = forcats::fct_infreq(country),
+    country = forcats::fct_relevel(country, after = Inf)
+  ) |>
+  ggplot(aes(x = country, fill = country)) +
+  geom_bar(colour = "black") +
+  labs(
+    title = "Figure 2: True Near Death Experiences by Country",
+    x = "Country",
+    y = "Number of Participants",
+    fill = "Country"
+  ) +
+  scale_fill_grey(
+    start = 0.3,
+    end = 0.8
+  ) +
+  theme_classic() +
+  theme(
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank()
+  )
+  
+```
+
+
+This geographic concentration is consistent across the broader set of self-reported experiences, as seen in Figure 3, except France has the fourth highest number of self reported near death experiences while Spain only has 2 self reported near death experiences. 
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+nde_country_group |>
+   mutate(
+    country_group = forcats::fct_infreq(country_group),
+    country_group = forcats::fct_relevel(country_group, "Other Countries", after = Inf)
+  ) |>
+  ggplot(aes(x = country_group, fill = country_group)) +
+  geom_bar(colour = "black") + 
+  labs(
+    title = "Figure 3: Self-Reported Near-Death Experience by Country",
+    x = "Home Country",
+    y = "Number of Participants",
+    caption = "Countries with fewer than 8 NDE reports were combined into 'Other Countries'."
+  ) +
+  scale_fill_grey(
+    start = 0.3,
+    end = 0.8
+  ) +
+  theme_classic() +
+theme(legend.position = "none", 
+    plot.caption = element_text(
+      hjust = 0,
+      size = 9,
+      margin = margin(t = 10)
+    ))
+```
+
+However, these results should not be interpreted as evidence that individuals in the United States or other countries are more likely to experience NDEs. The dataset consists of voluntary self-reports and therefore reflects patterns of reporting and participation as well as the underlying experiences themselves.
+
+## Accessible Article: 
+### Amercians Dominate Self Reported Near Death Experiences
+People love to joke that American's, and especially Floridians, have a special talent for making questionable decisions. Well, recent data from the Near-Death Experience Research Foundation shows that these stereotypes hold some truth to them. 
+
+The Near-Death Experience Research Foundation reports near death experiences (NDEs) and the United States dominates the list, followed by Canada and Australia.
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+nde_country_group |>
+   mutate(
+    country_group = forcats::fct_infreq(country_group),
+    country_group = forcats::fct_relevel(country_group, "Other Countries", after = Inf)
+  ) |>
+  ggplot(aes(x = country_group, fill = country_group)) +
+  geom_bar(colour = "black") + 
+  labs(
+    title = "Self Reports of Near Death Experience by Country",
+    x = "Home Country",
+    y = "Number of Reports",
+    caption = stringr::str_wrap( "Countries with fewer than 8 NDE reports were combined into 'Other Countries', including countries like India, Switzerland, Germany, and Mexico."
+  )) +
+  theme_minimal() +
+theme(legend.position = "none",
+       plot.caption = element_text(
+      hjust = 0,
+      size = 9,
+    ))
+
+```
+
+As the graph above shows, the United States dominates with 389 reported NDE's, almost 14 times more than the next closest country, Canada, with 28 reported NDEs. No wonder the world believes Westernized countries are more reckless than other nations. 
+
+Now, these are the number of self reported near death experiences. But, the Near-Death Experience Research Foundation also reports the Greyson score associated with each self report. The Greyson score ranks the level of a near death experience between 0-32 with any score 7 or above considered a true NDE. The following image shows the distribution of Greyson scores for each self reported NDE. 
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+ggplot(nde_subset, aes(x = greyson_score, fill = NDE)) + 
+  geom_histogram(bins = 33, colour = "black") +  
+  labs(
+    title = "Greyson Score Distribution of Reported Near Death Experiences",
+    x = "Greyson Score",
+    y = "Number of Reports",
+    fill = "NDE"
+  ) +
+  scale_fill_manual(
+    values = c("Yes" = "purple2", "No" = "plum")
+  ) +
+  theme_minimal()
+```
+
+As we can see, the majority of self reported NDEs are not considered true NDEs. But, we can zoom in on the true NDE's and we can see that the United States still dominates the list followed by Australia, Canada and Spain.
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+nde_country_group |>
+  filter(NDE == "Yes") |>
+  mutate(
+    country = forcats::fct_infreq(country),
+    country = forcats::fct_relevel(country, "Other Country", after = Inf)
+  ) |>
+  ggplot(aes(x = country, fill = country)) +
+  geom_bar(colour = "black") +
+  labs(
+    title = "True Near Death Experience by Country",
+    x = NULL,
+    y = "Number of NDEs",
+    fill = "Country"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank()
+  )
+  
+```
+
+So, maybe the world has a reason to judge Westernized nations, and especially the United States, for being reckless. Otherwise how else should we interpret this data? 
+
+# Data Statement
+
+The data used in this analysis were obtained from the July 21, 2026 tidytuesday dataset, Near-Death Experiences (NDERF). The dataset was distributed through the tidytuesday GitHub Repository and originates from the Near Death Experience Research Foundation (NDERF). The analysis focuses on self-reported experiences and their associated Greyson scores. Experiences with a Greyson score of 7 or greater were classified as true NDEs for the purposes of this analysis. Countries with fewer than eight reports were combined into an "Other Countries" category for visualization. Because the data consist of voluntary self-reports, the results describe the composition of the NDERF dataset rather than the prevalence of NDEs across countries or populations.
